@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: app
+spec:
+  template:
+    spec:
+      volumes:
+      - name: storage
+        emptyDir: {}
