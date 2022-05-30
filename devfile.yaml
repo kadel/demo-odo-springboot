@@ -1,74 +1,22 @@
-schemaVersion: 2.2.0
-metadata:
-  description: Spring Boot® using Java
-  displayName: Spring Boot®
-  version: 1.1.0
-  language: java
-  name: demo
-  projectType: springboot
-  tags:
-  - Java
-  - Spring
-variables:
-  APP_IMAGE:  quay.io/tkral/devbox-demo-app
-
-components:
-
-- container:
-    endpoints:
-    - name: 8080-tcp
-      targetPort: 8080
-    env:
-    - name: DEBUG_PORT
-      value: "5858"
-    image: quay.io/tkral/devbox-demo-devbox
-    mountSources: true
-  name: tools
-
-- name: app-image
-  image:
-    imageName: "{{APP_IMAGE}}"
-    dockerfile:
-      uri: ./src/main/docker/Dockerfile
-      buildContext: ${PROJECT_SOURCE}
-
-- name: resource-app
-  kubernetes:
-    uri: config/default/app.yaml
-
-- name: resource-pvc
-  kubernetes:
-    uri: config/default/pvc.yaml
-
-- name: resource-service
-  kubernetes:
-    uri: config/default/service.yaml
-
-- name: resource-route
-  kubernetes:
-    uri: config/local/route.yaml
-
 commands:
-
 - exec:
-    commandLine: mvn package -Dmaven.test.skip=true
+    commandLine: mvn clean -Dmaven.repo.local=/home/user/.m2/repository package -Dmaven.test.skip=true
     component: tools
     group:
       isDefault: true
       kind: build
+    hotReloadCapable: false
     workingDir: ${PROJECT_SOURCE}
   id: build
-
 - exec:
-    commandLine: mvn spring-boot:run
+    commandLine: mvn -Dmaven.repo.local=/home/user/.m2/repository spring-boot:run
     component: tools
-    hotReloadCapable: true
     group:
       isDefault: true
       kind: run
+    hotReloadCapable: false
     workingDir: ${PROJECT_SOURCE}
   id: run
-
 - exec:
     commandLine: java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=${DEBUG_PORT},suspend=n
       -jar target/*.jar
@@ -76,38 +24,45 @@ commands:
     group:
       isDefault: true
       kind: debug
+    hotReloadCapable: false
     workingDir: ${PROJECT_SOURCE}
   id: debug
-
-- apply:
-    component: resource-app
-  id: deploy-app
-
-- apply:
-    component: resource-pvc
-  id: deploy-pvc
-
-- apply:
-    component: resource-service
-  id: deploy-service
-
-- apply:
-    component: resource-route
-  id: deploy-route
-
-- apply:
-    component: app-image
-  id: app-image
-
-- composite:
-    commands:
-      - app-image
-      - deploy-pvc
-      - deploy-service
-      - deploy-route
-      - deploy-app
-    group:
-      isDefault: true
-      kind: deploy
-  id: deploy
-
+components:
+- container:
+    dedicatedPod: false
+    endpoints:
+    - name: 8080-tcp
+      secure: false
+      targetPort: 8080
+    env:
+    - name: DEBUG_PORT
+      value: "5858"
+    image: quay.io/eclipse/che-java11-maven:next
+    memoryLimit: 768Mi
+    mountSources: true
+    volumeMounts:
+    - name: m2
+      path: /home/user/.m2
+  name: tools
+- name: m2
+  volume:
+    ephemeral: false
+    size: 3Gi
+metadata:
+  description: Spring Boot® using Java
+  displayName: Spring Boot®
+  globalMemoryLimit: 2674Mi
+  icon: https://spring.io/images/projects/spring-edf462fec682b9d48cf628eaf9e19521.svg
+  language: java
+  name: my-java-springboot-app
+  projectType: spring
+  tags:
+  - Java
+  - Spring
+  version: 1.1.0
+schemaVersion: 2.1.0
+starterProjects:
+- git:
+    remotes:
+      origin: https://github.com/odo-devfiles/springboot-ex.git
+  name: springbootproject
