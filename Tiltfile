@@ -1,6 +1,6 @@
 # -*- mode: Python -*-
 
-image = 'quay.io/tkral/devbox-demo'
+image = 'quay.io/tkral/devbox-demo-app'
 
 local_resource(
   'java-compile',
