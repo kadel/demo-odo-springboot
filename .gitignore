@@ -33,3 +33,4 @@ build/
 .vscode/
 
 .odo
+.odo/odo-file-index.json
