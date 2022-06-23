@@ -1,16 +1,9 @@
 schemaVersion: 2.2.0
 metadata:
-  description: Spring Boot® using Java
-  displayName: Spring Boot®
-  version: 1.1.0
-  language: java
   name: demo
-  projectType: springboot
-  tags:
-  - Java
-  - Spring
 variables:
-  APP_IMAGE:  quay.io/tkral/devbox-demo-app
+  APP_IMAGE: quay.io/tkral/devbox-demo-app
+  DEV_IMAGE: quay.io/tkral/devbox-demo-devbox
 
 components:
 
@@ -21,9 +14,16 @@ components:
     env:
     - name: DEBUG_PORT
       value: "5858"
-    image: quay.io/tkral/devbox-demo-devbox
+    image: ${DEV_IMAGE}
     mountSources: true
   name: tools
+
+- name: dev-image
+  image:
+    imageName: "{{DEV_IMAGE}}"
+    dockerfile:
+      uri: ./devcontainer/Dockerfile
+      buildContext: ${PROJECT_SOURCE}
 
 - name: app-image
   image:
@@ -60,7 +60,7 @@ commands:
   id: build
 
 - exec:
-    commandLine: mvn spring-boot:run
+    commandLine: mvn spring-boot:run -Dspring-boot.run.profiles=postgres
     component: tools
     hotReloadCapable: true
     group:
@@ -78,6 +78,11 @@ commands:
       kind: debug
     workingDir: ${PROJECT_SOURCE}
   id: debug
+
+- exec:
+    commandLine: helm repo add bitnami https://charts.bitnami.com/bitnami && helm install my-db bitnami/postgresql
+    component: tools
+  id: deploy-db
 
 - apply:
     component: resource-app
@@ -106,6 +111,7 @@ commands:
       - deploy-service
       - deploy-route
       - deploy-app
+      - deploy-db
     group:
       isDefault: true
       kind: deploy
